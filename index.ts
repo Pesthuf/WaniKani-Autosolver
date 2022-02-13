@@ -1,19 +1,7 @@
 import {createSuccessfulReview, getReviewData, getSummary,} from "./lib/WaniKaniClient.ts";
 import {Levels} from "./lib/WaniKaniTypes.ts";
-import {timeDiffInHours} from "./lib/misc.ts";
+import {timeDiffInHours} from "./lib/Misc.ts";
 import exit = Deno.exit;
-import {config} from "https://deno.land/x/dotenv/mod.ts";
-
-const conf = config();
-if (conf.API_TOKEN === undefined) {
-    console.log("You probably didn't create a .env file. Create a file called .env in this Application's directory with content like \n\n" +
-        "API_URL=\"https://api.wanikani.com/v2\"\n" +
-        "WANIKANI_REVISION=\"20170710\"\n" +
-        "API_TOKEN=\"....\"\n " +
-        "\nthen try again.");
-    exit(1);
-}
-
 
 const summary = await getSummary();
 const summaryData = summary.data;
@@ -36,7 +24,7 @@ const assignemntsToDo = reviewData.filter(value => {
 })
 
 if (assignemntsToDo.length === 0) {
-    console.log("No assignment to do for me - get to work! on those ", reviewData.length, " reviews!");
+    console.log("No assignment to do for me - get to work on those ", reviewData.length, " reviews!");
 }
 
 let successCount = 0;

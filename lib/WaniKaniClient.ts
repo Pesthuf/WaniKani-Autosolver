@@ -8,7 +8,7 @@ import {
     Summary,
     WaniKaniResponse,
 } from "./WaniKaniTypes.ts";
-import {config} from "https://deno.land/x/dotenv/mod.ts";
+import {getConfig} from "./Misc.ts";
 
 const ISO_8601_FULL =
     /^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d(\.\d+)?(([+-]\d\d:\d\d)|Z)?$/i;
@@ -52,15 +52,11 @@ export const fetchWaniKani = async <ResponseWrapper extends WaniKaniResponse<Dat
 export const fetchWaniKaniSingle = async <ResponseWrapper extends WaniKaniResponse<DataType>,
     DataType,
     >(endpoint: string, options: RequestInit = {}): Promise<ResponseWrapper> => {
-    const conf = config();
-
-    const apitoken = conf.API_TOKEN;
-    const apiUrl = conf.API_URL;
-    const revision = conf.WANIKANI_REVISION;
+    const conf = getConfig();
 
     const headers = new Headers(options.headers ?? {});
-    headers.set("Wanikani-Revision", revision);
-    headers.set("Authorization", `Bearer ${apitoken}`);
+    headers.set("Wanikani-Revision", conf.revision);
+    headers.set("Authorization", `Bearer ${conf.apiToken}`);
 
     let repeatRequest;
     let response;
@@ -69,7 +65,7 @@ export const fetchWaniKaniSingle = async <ResponseWrapper extends WaniKaniRespon
         repeatRequest = false;
         let url = endpoint;
         if (!endpoint.startsWith('https://')) {
-            url = apiUrl + endpoint;
+            url = conf.apiUrl + endpoint;
         }
         response = await fetch(url, {
             ...options,
