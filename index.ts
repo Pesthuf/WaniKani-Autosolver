@@ -1,10 +1,6 @@
-import {
-    createSuccessfulReview,
-    fetchWaniKani, fetchWaniKaniSingle, getSubjects,
-    getSummary,
-    queryReviews,
-} from "./lib/WaniKaniClient.ts";
-import {CollectionResponse, Levels, ReviewData} from "./lib/WaniKaniTypes.ts";
+import {createSuccessfulReview, getReviewData, getSummary,} from "./lib/WaniKaniClient.ts";
+import {Levels} from "./lib/WaniKaniTypes.ts";
+import {timeDiffInHours} from "./lib/misc.ts";
 import exit = Deno.exit;
 
 const summary = await getSummary();
@@ -17,32 +13,32 @@ if (summaryData.next_reviews_at > now) {
 }
 
 console.log(new Date());
-const reviewAssignments = await queryReviews();
+const reviewData = await getReviewData();
 
-const subs = await getSubjects(reviewAssignments.data.map(a => a.data.subject_id));
+/**
+ * Here we decide what assignemtns we want the program to do. Currently, that's Enlightened,
+ */
+const assignemntsToDo = reviewData.filter(value => {
+    const stage = value.assignment.data.srs_stage;
+    return ([Levels.MASTER, Levels.ENLIGHTENED, Levels.GURU, Levels.APP_2].includes(stage));
+})
+
+if (assignemntsToDo.length === 0) {
+    console.log("No assignment to do for me - get to work! on those ", reviewData.length, " reviews!");
+}
+
 let successCount = 0;
+
 try {
-    for (const subject of subs.data) {
-        const assignment = reviewAssignments.data.find(a => a.data.subject_id === subject.id)!;
-        if (assignment.data.srs_stage < Levels.MASTER) {
-            // console.debug("Skipping", subject.object, subject.data.characters, "It is on stage" , assignment.data.srs_stage);
-            continue;
-        }
+    for (const {subject} of assignemntsToDo) {
         console.log("Trying to create successful review for", subject.object, subject.data.characters);
-        const resp = await createSuccessfulReview(subject.id);
+        await createSuccessfulReview(subject.id);
         successCount++;
     }
-}
-catch(err) {
+} catch (err) {
     console.error("Managed to successfully complete ", successCount, "before failing");
     throw err;
 }
 
 console.log("Successfully completed!", successCount, "Reviews completed!");
 
-function timeDiffInHours(date1: Date, date2: Date): number {
-  const ts1 = +date1;
-  const ts2 = +date2;
-
-  return (ts1 - ts2) / 1000 / 3600;
-}

@@ -1,15 +1,14 @@
 import {
     Assignment,
-    AssignmentData,
     CollectionResponse,
     Review,
     ReviewData,
-    SingleResponse, Subject,
+    SingleResponse,
+    Subject,
     Summary,
     WaniKaniResponse,
 } from "./WaniKaniTypes.ts";
 import {config} from "https://deno.land/x/dotenv/mod.ts";
-import exit = Deno.exit;
 
 const ISO_8601_FULL =
     /^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d(\.\d+)?(([+-]\d\d:\d\d)|Z)?$/i;
@@ -34,6 +33,7 @@ export const fetchWaniKani = async <ResponseWrapper extends WaniKaniResponse<Dat
             if (returnValue === undefined) {
                 returnValue = responseData;
             } else {
+                // noinspection JSUnusedAssignment
                 (returnValue.data as DataType[]).push(...responseData.data);
             }
 
@@ -103,8 +103,6 @@ export const fetchWaniKaniSingle = async <ResponseWrapper extends WaniKaniRespon
         }
         return value;
     });
-
-    return await response.json() as ResponseWrapper;
 };
 
 export function fetchAllReviews(): Promise<CollectionResponse<ReviewData>> {
@@ -140,5 +138,22 @@ export async function createSuccessfulReview(
                 incorrect_reading_answers: 0,
             }
         }),
+    });
+}
+
+export async function getReviewData() {
+    const reviewAssignments = (await queryReviews()).data;
+    const subjects = (await getSubjects(reviewAssignments.map(a => a.data.subject_id))).data;
+
+    const subsBySubjectId = subjects.reduce<Record<number, Subject>>((previousValue, currentValue) => {
+        previousValue[currentValue.id] = currentValue;
+        return previousValue;
+    }, {});
+
+    return reviewAssignments.map(value => {
+        return {
+            subject: subsBySubjectId[value.data.subject_id],
+            assignment: value
+        }
     });
 }
