@@ -22,11 +22,13 @@ make run
 This script will only check for currently pending reviews, do any it deems appropriate, then quit. If you want it to run regularly, you need to schedule it youself, using `cron`, `systemd-timer`, `jenkins` or whatever else you want. 
 
 ## Configuration
-You need to configure the script using environemtn variables. You only need to provide one environment variable:
+You need to configure the script using environment variables. You only need to provide one environment variable:
 ```bash
 API_TOKEN="...."
 ```
 
 Generate yourself an API-Token [here](https://www.wanikani.com/settings/personal_access_tokens).
+
+Either configure the environment variable globally, write a wrapper script to provide it to the `deno run`command... or just create a .env file.
 
 
