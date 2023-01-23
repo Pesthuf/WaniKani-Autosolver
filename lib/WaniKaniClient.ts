@@ -20,12 +20,12 @@ const ISO_8601_FULL =
  */
 export const fetchWaniKani = async <ResponseWrapper extends WaniKaniResponse<DataType>,
     DataType,
-    >(endpoint: string, options: RequestInit = {}): Promise<ResponseWrapper> => {
+>(endpoint: string, options: RequestInit = {}): Promise<ResponseWrapper> => {
 
     let nextEndpoint: string | null = endpoint;
     let returnValue: ResponseWrapper | undefined;
 
-    while (nextEndpoint !== null) {
+    do {
         const responseData: ResponseWrapper = await fetchWaniKaniSingle(nextEndpoint, options);
 
         nextEndpoint = null;
@@ -44,14 +44,15 @@ export const fetchWaniKani = async <ResponseWrapper extends WaniKaniResponse<Dat
             returnValue = responseData;
         }
     }
+    while (nextEndpoint !== null)
 
-    return returnValue!;
+    return returnValue;
 }
 
 
 export const fetchWaniKaniSingle = async <ResponseWrapper extends WaniKaniResponse<DataType>,
     DataType,
-    >(endpoint: string, options: RequestInit = {}): Promise<ResponseWrapper> => {
+>(endpoint: string, options: RequestInit = {}): Promise<ResponseWrapper> => {
     const conf = getConfig();
 
     const headers = new Headers(options.headers ?? {});
@@ -119,6 +120,25 @@ export async function queryReviews(): Promise<CollectionResponse<Assignment>> {
 
 export async function getSubjects(SubjectIds: number[]): Promise<CollectionResponse<Subject>> {
     return await fetchWaniKani('/subjects?ids=' + SubjectIds.join(','));
+}
+
+/**
+ * Returns a set that contains all subject IDs where the user has made an error so far.
+ * @param SubjectIds
+ */
+export async function GetSubjectsWithErrors(SubjectIds: number[]): Promise<Set<number>> {
+    const url = new URL("/review_statistics", "https://none");
+    url.searchParams.set("subject_ids", SubjectIds.join(','));
+    url.searchParams.set("percentages_less_than", "99");
+
+    const resultValue = new Set<number>();
+
+    const reviews = await fetchWaniKani(url.pathname + url.search) as CollectionResponse<Review>;
+    for (const datum of reviews.data) {
+        resultValue.add(datum.data.subject_id);
+    }
+
+    return resultValue;
 }
 
 export async function createSuccessfulReview(

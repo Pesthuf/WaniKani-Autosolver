@@ -1,4 +1,4 @@
-import {createSuccessfulReview, getReviewData, getSummary,} from "./lib/WaniKaniClient.ts";
+import {createSuccessfulReview, getReviewData, GetSubjectsWithErrors, getSummary,} from "./lib/WaniKaniClient.ts";
 import {Levels} from "./lib/WaniKaniTypes.ts";
 import {timeDiffInHours} from "./lib/Misc.ts";
 import exit = Deno.exit;
@@ -15,13 +15,19 @@ if (summaryData.next_reviews_at > now) {
 console.log(new Date());
 const reviewData = await getReviewData();
 
+
+
 /**
  * Here we decide what assignemtns we want the program to do. Currently, that's Enlightened,
  */
-const assignemntsToDo = reviewData.filter(value => {
+const assignmentCandidates = reviewData.filter(value => {
     const stage = value.assignment.data.srs_stage;
     return ([Levels.MASTER, Levels.ENLIGHTENED, Levels.GURU, Levels.APP_2].includes(stage));
 })
+
+// If we ever got the subject wrong, this app should not create reviews for us.
+const subjectIdsWithErrors = await GetSubjectsWithErrors(assignmentCandidates.map(value => value.subject.id));
+const assignemntsToDo = assignmentCandidates.filter(value => !subjectIdsWithErrors.has(value.subject.id));
 
 if (assignemntsToDo.length === 0) {
     console.log("No assignment to do for me - get to work on those ", reviewData.length, " reviews!");
